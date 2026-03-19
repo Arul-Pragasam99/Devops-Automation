@@ -224,12 +224,14 @@ def init_driver():
     opts.add_argument("--disable-sync")
     opts.add_argument("--disable-default-apps")
     opts.add_argument("--metrics-recording-only")
-    opts.add_argument("--window-size=1400,900")
-    opts.add_argument("--start-maximized")
+    opts.add_argument("--start-maximized")          # maximize on launch
+    # NOTE: do NOT add --window-size here — it overrides --start-maximized
     opts.add_experimental_option("excludeSwitches", ["enable-logging"])
     svc = Service(ChromeDriverManager().install())
     svc.creation_flags = 0x08000000
-    return webdriver.Chrome(service=svc, options=opts)
+    driver = webdriver.Chrome(service=svc, options=opts)
+    driver.maximize_window()                        # force maximize via API too
+    return driver
 
 def safe_get(driver, url, retries=4, delay=1.2):
     for i in range(retries):
@@ -244,16 +246,18 @@ def safe_get(driver, url, retries=4, delay=1.2):
                 raise
 
 def open_new_tab(driver, url):
-    """Open URL in a new tab and switch to it."""
+    """Open URL in a new tab, switch to it, and maximize."""
     driver.execute_script("window.open(arguments[0], '_blank');", url)
     driver.switch_to.window(driver.window_handles[-1])
+    driver.maximize_window()   # ensure every new tab is also maximized
     time.sleep(1.5)
 
 def switch_tab(driver, index):
-    """Switch to tab by index (0-based)."""
+    """Switch to tab by index (0-based) and maximize."""
     handles = driver.window_handles
     if index < len(handles):
         driver.switch_to.window(handles[index])
+        driver.maximize_window()
         time.sleep(0.5)
 
 def scroll_page(driver, times=3, pause=0.6):
